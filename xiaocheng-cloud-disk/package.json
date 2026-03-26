@@ -1,0 +1,23 @@
+{
+  "name": "xiaocheng-cloud-disk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "小程网盘 - 轻量化云存储工具",
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev:mobile": "pnpm --filter @xcd/mobile dev",
+    "dev:web": "pnpm --filter @xcd/web dev",
+    "dev:server": "pnpm --filter @xcd/server dev",
+    "dev:desktop": "pnpm --filter @xcd/desktop dev",
+    "build:mobile": "pnpm --filter @xcd/mobile build",
+    "build:web": "pnpm --filter @xcd/web build",
+    "build:server": "pnpm --filter @xcd/server build",
+    "build:desktop": "pnpm --filter @xcd/desktop build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

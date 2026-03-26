@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: xiaocheng-cloud-disk
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/xcd_clouddisk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+  
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: xiaocheng-cloud-disk-jwt-secret-key-2024-very-long-and-secure
+    expiration: 86400000
+    refresh-expiration: 604800000
+  
+  file:
+    upload-dir: ./uploads
+    max-file-size: 10737418240
+    chunk-size: 2097152
