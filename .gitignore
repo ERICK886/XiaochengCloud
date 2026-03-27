@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.idea/
+.vscode/
+*.iml
+
+# Build outputs
+target/
+build/
+dist/
+*.class
+*.jar
+*.war
+
+# Flutter
+.dart_tool/
+.packages
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Electron
+dist/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env
+
+# Temp files
+*.tmp
+*.swp
+*~
