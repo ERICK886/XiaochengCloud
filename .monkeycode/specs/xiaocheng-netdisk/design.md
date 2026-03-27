@@ -47,11 +47,12 @@
 
 | 组件 | 技术方案 | 说明 |
 |------|----------|------|
-| 后端框架 | Spring Boot 2.7.x / Node.js | 二选一 |
+| 后端框架 | Spring Boot 2.7.x | 生态完善，与MySQL/Redis/MyBatis集成良好 |
 | 数据库 | MySQL 8.0 | 用户信息、文件metadata、分享记录 |
 | 缓存 | Redis 6.x | 会话缓存、常用数据缓存 |
 | 文件传输 | HTTP/HTTPS | 支持断点续传、分块上传 |
-| 定时任务 | Quartz/Node-cron | 回收站清理、备份提醒 |
+| 定时任务 | Quartz | 回收站清理、备份提醒 |
+| ORM | MyBatis-Plus 3.5.x | 轻量级ORM框架 |
 
 #### 存储技术栈
 
@@ -212,13 +213,27 @@ com.xiaocheng.netdisk/
 | /api/user/logout | POST | 退出登录 |
 | /api/user/info | GET | 获取用户信息 |
 | /api/user/updatePassword | PUT | 修改密码 |
+| /api/user/updateInfo | PUT | 更新用户信息 |
+
+#### 设备管理接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/device/list | GET | 获取设备列表 |
+| /api/device/logout | POST | 退出指定设备 |
+| /api/device/verify | POST | 验证设备安全 |
+| /api/device/update | PUT | 更新设备信息 |
 
 #### 文件管理接口
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | /api/file/list | GET | 获取文件列表 |
-| /api/file/upload | POST | 上传文件 |
+| /api/file/upload/init | POST | 初始化分片上传 |
+| /api/file/upload/chunks | GET | 获取已上传分片列表 |
+| /api/file/upload/chunk | POST | 上传单个分片 |
+| /api/file/upload/merge | POST | 合并分片 |
+| /api/file/upload/cancel | DELETE | 取消上传任务 |
 | /api/file/download | GET | 下载文件 |
 | /api/file/delete | DELETE | 删除文件 |
 | /api/file/move | PUT | 移动文件 |
@@ -229,6 +244,8 @@ com.xiaocheng.netdisk/
 | /api/file/favorite | POST | 收藏文件 |
 | /api/file/unfavorite | POST | 取消收藏 |
 | /api/file/recent | GET | 最近文件 |
+| /api/file/detail | GET | 文件详情 |
+| /api/file/thumbnail | GET | 获取缩略图 |
 
 #### 分享接口
 
@@ -262,6 +279,17 @@ com.xiaocheng.netdisk/
 | /api/recycle/delete | DELETE | 彻底删除 |
 | /api/recycle/empty | DELETE | 清空回收站 |
 
+#### 好友管理接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/friend/list | GET | 好友列表 |
+| /api/friend/add | POST | 添加好友 |
+| /api/friend/accept | POST | 接受好友请求 |
+| /api/friend/reject | POST | 拒绝好友请求 |
+| /api/friend/delete | DELETE | 删除好友 |
+| /api/friend/search | GET | 搜索用户 |
+
 ### 3.3 接口参数规范
 
 #### 请求头
@@ -292,6 +320,41 @@ com.xiaocheng.netdisk/
 | sort | 排序字段 | createTime |
 | order | 排序方向 | desc |
 
+#### JWT Token规范
+
+**AccessToken**
+| 字段 | 说明 |
+|------|------|
+| userId | 用户ID |
+| username | 用户名 |
+| deviceId | 设备ID |
+| exp | 过期时间（2小时） |
+| iat | 签发时间 |
+
+**RefreshToken**
+| 字段 | 说明 |
+|------|------|
+| userId | 用户ID |
+| tokenVersion | Token版本号 |
+| deviceId | 设备ID |
+| exp | 过期时间（7天） |
+
+**Token刷新策略**
+- 每次访问接口时验证AccessToken
+- AccessToken过期时，使用RefreshToken刷新
+- 刷新时检查tokenVersion是否匹配
+- 远程退出登录时递增tokenVersion，使旧Token失效
+
+#### 验证码防刷机制
+
+| 限制类型 | 限制规则 |
+|----------|----------|
+| 同一IP | 1分钟1次，1小时5次，1天10次 |
+| 同一手机号 | 1分钟1次，1天10次 |
+| 错误次数 | 超限锁定30分钟 |
+| 验证码有效期 | 5分钟 |
+| 验证码格式 | 6位数字 |
+
 ## 4. 数据库设计
 
 ### 4.1 ER图概述
@@ -299,16 +362,24 @@ com.xiaocheng.netdisk/
 ```
 用户表 (user)
     │
-    ├──文件表 (file)          1:N
+    ├──文件表 (file)              1:N
     │     ├──文件分片表 (file_chunk)
-    │     └──文件标签表 (file_tag)
+    │     ├──文件标签表 (file_tag)
+    │     └──文件版本表 (file_version)  1:N
     │
-    ├──分享表 (share)         1:N
+    ├──分享表 (share)             1:N
+    │     └──分享访问记录表 (share_access)
     │
-    ├──备份任务表 (backup_task)  1:N
+    ├──备份任务表 (backup_task)   1:N
     │     └──备份历史表 (backup_history)
     │
-    └──回收站表 (recycle)     1:N
+    ├──回收站表 (recycle)         1:N
+    │
+    ├──设备表 (device)            1:N
+    │
+    ├──好友关系表 (friend)        1:N
+    │
+    └──分片上传任务表 (upload_task)  1:N
 ```
 
 ### 4.2 表结构设计
@@ -411,6 +482,75 @@ com.xiaocheng.netdisk/
 | delete_time | DATETIME | 删除时间 |
 | expire_time | DATETIME | 过期时间（删除时间+30天） |
 
+#### 设备表 (device)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| user_id | BIGINT | 用户ID |
+| device_id | VARCHAR(64) | 设备唯一标识 |
+| device_name | VARCHAR(100) | 设备名称 |
+| device_type | TINYINT | 设备类型 1-iOS 2-Android 3-PC Web |
+| last_login_time | DATETIME | 最后登录时间 |
+| last_ip | VARCHAR(50) | 最后登录IP |
+| last_location | VARCHAR(200) | 最后登录位置 |
+| status | TINYINT | 状态 0-正常 1-禁用 |
+| create_time | DATETIME | 创建时间 |
+
+#### 文件版本表 (file_version)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| file_id | BIGINT | 文件ID |
+| version_id | VARCHAR(32) | 版本标识 |
+| file_hash | VARCHAR(64) | 文件哈希 |
+| file_size | BIGINT | 文件大小 |
+| storage_path | VARCHAR(500) | 存储路径 |
+| source | TINYINT | 来源 1-相册备份 2-视频备份 3-手动上传 |
+| create_time | DATETIME | 创建时间 |
+
+#### 好友关系表 (friend)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| user_id | BIGINT | 用户ID |
+| friend_id | BIGINT | 好友用户ID |
+| status | TINYINT | 状态 0-待确认 1-已添加 2-已拒绝 |
+| create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
+
+#### 分片上传任务表 (upload_task)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| upload_id | VARCHAR(64) | 上传任务ID |
+| user_id | BIGINT | 用户ID |
+| file_name | VARCHAR(255) | 文件名 |
+| file_size | BIGINT | 文件大小 |
+| file_hash | VARCHAR(64) | 文件哈希 |
+| parent_id | BIGINT | 父文件夹ID |
+| chunk_count | INT | 分片总数 |
+| uploaded_chunks | VARCHAR(500) | 已上传分片列表，JSON格式 |
+| status | TINYINT | 状态 0-进行中 1-已完成 2-已取消 |
+| create_time | DATETIME | 创建时间 |
+| expire_time | DATETIME | 过期时间 |
+
+#### 验证码表 (verify_code)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| target | VARCHAR(50) | 验证码目标（手机号/邮箱） |
+| code | VARCHAR(10) | 验证码 |
+| type | TINYINT | 类型 1-登录 2-注册 3-修改密码 |
+| ip_address | VARCHAR(50) | 请求IP |
+| error_count | INT | 错误次数 |
+| expire_time | DATETIME | 过期时间 |
+| create_time | DATETIME | 创建时间 |
+
 ### 4.3 索引设计
 
 | 表名 | 索引字段 | 索引类型 | 说明 |
@@ -423,6 +563,13 @@ com.xiaocheng.netdisk/
 | share | share_code | UNIQUE | 分享码唯一 |
 | share | user_id | INDEX | 用户分享列表 |
 | recycle | user_id, expire_time | INDEX | 回收站清理 |
+| device | user_id | INDEX | 用户设备列表 |
+| device | device_id | UNIQUE | 设备唯一标识 |
+| file_version | file_id | INDEX | 文件版本历史 |
+| upload_task | upload_id | UNIQUE | 上传任务唯一 |
+| upload_task | user_id, status | INDEX | 用户进行中上传 |
+| verify_code | target, type | INDEX | 验证码查询 |
+| verify_code | expire_time | INDEX | 验证码清理 |
 
 ## 5. 安全设计
 
@@ -453,8 +600,20 @@ com.xiaocheng.netdisk/
 |------|------|
 | 登录失败锁定 | 连续5次失败锁定30分钟 |
 | Token过期 | AccessToken 2小时，RefreshToken 7天 |
+| Token版本控制 | 远程退出通过递增tokenVersion实现 |
 | 异常登录提醒 | 新设备登录推送通知 |
 | 文件权限控制 | 密码保护文件单独验证 |
+| 敏感操作验证 | 修改密码、删除文件等需二次验证 |
+
+### 5.5 传输层安全
+
+| 安全措施 | 说明 |
+|----------|------|
+| HTTPS强制 | 所有HTTP请求重定向至HTTPS |
+| TLS版本 | TLS 1.3（兼容1.2） |
+| 证书配置 | 权威CA签发证书 |
+| HSTS | 启用HTTP严格传输安全 |
+| 安全请求头 | X-Frame-Options, CSP, X-XSS-Protection |
 
 ## 6. 文件存储设计
 
@@ -475,50 +634,89 @@ com.xiaocheng.netdisk/
 ### 6.2 分片上传流程
 
 ```
-1. 客户端请求分片上传接口，获取uploadId
-2. 客户端将文件分片（如每片5MB）
-3. 客户端并行上传各分片
-4. 服务端合并分片
-5. 计算文件Hash，进行去重检查
-6. 如已存在，关联现有文件；如不存在，保存新文件
+1. 客户端计算文件Hash（MD5+SHA256）
+2. 客户端请求 /upload/init
+   - 传入：fileName, fileSize, fileHash, parentId
+   - 返回：uploadId, chunkSize(5MB), chunkCount
+3. 客户端检查是否已存在相同文件（通过fileHash）
+   - 如存在，直接关联现有文件，无需上传
+4. 客户端查询 /upload/chunks 获取已上传分片
+5. 客户端跳过已上传分片，并行上传剩余分片
+6. 服务端验证分片Hash，存储至chunk目录
+7. 所有分片上传完成后，客户端请求 /upload/merge
+8. 服务端合并分片，计算最终文件Hash
+9. 进行去重检查：
+   - 如已存在，关联现有文件
+   - 如不存在，保存新文件，清理分片
+10. 清理超时未完成的upload_task（24小时）
 ```
 
 ### 6.3 断点续传机制
 
-- 记录已上传分片列表
-- 上传中断后，获取已上传分片
-- 从中断处继续上传
-- 支持手动暂停/恢复
+**状态管理**
+- 服务端记录每个upload_task的uploaded_chunks（JSON数组）
+- 客户端记录本地已上传分片索引
+
+**恢复流程**
+```
+1. 客户端查询 /upload/chunks?uploadId=xxx
+2. 服务端返回已上传分片列表 [0, 1, 3]
+3. 客户端从分片2继续上传
+4. 后续流程与正常上传一致
+```
+
+**暂停/恢复**
+- 暂停：客户端停止上传，状态已保存
+- 恢复：重新查询已上传分片，继续上传
 
 ### 6.4 文件去重
 
-- 计算文件MD5+SHA256混合Hash
-- 存储时检查Hash是否已存在
-- 如存在，关联现有文件，节省存储空间
+**去重策略**
+- 计算文件Hash：MD5+SHA256混合
+- 存储时检查Hash是否存在
+- 如存在，关联现有文件（不同用户、不同目录可共享同一物理文件）
+- 引用计数：记录有多少文件引用同一物理存储
+- 引用计数为0时，可执行清理（根据备份策略保留版本）
 
 ## 7. 备份同步设计
 
 ### 7.1 相册备份流程
 
 ```
-1. 用户开启相册备份，设置备份模式
-2. 系统扫描相册，生成文件列表
-3. 对比已备份文件，排除相同文件
-4. 按设置条件（WiFi/所有网络、原图/压缩）执行上传
-5. 更新备份进度和状态
-6. 备份完成推送通知
+1. 用户开启相册备份，设置备份模式（WiFi/所有网络、原图/压缩）
+2. 系统申请相册读取权限，扫描相册文件
+3. 对比已备份文件（基于file_hash），排除相同文件
+4. 根据设置进行图片压缩（如需要）
+5. 执行分片上传，实时更新备份进度
+6. 上传完成后记录file_version
+7. 备份完成推送通知
+8. 支持暂停/继续备份
 ```
 
 ### 7.2 PC文件夹同步流程
 
 ```
-1. 用户设置同步文件夹
-2. 首次全量同步
-3. 监听本地文件变化
-4. 变化时增量同步更新
-5. 定时检查云端变化
-6. 同步冲突处理（以本地/云端/两者都保留供选择）
+1. 用户选择本地同步文件夹
+2. 系统计算本地文件Hash列表
+3. 首次全量同步：上传所有文件
+4. 启动文件监听（文件系统事件）
+5. 本地文件变化时：
+   - 创建/修改：增量上传
+   - 删除：移动到回收站
+6. 定时检查云端变化（每5分钟）
+7. 云端变化时同步至本地
+8. 冲突处理策略：
+   - 提示用户选择：保留本地/保留云端/保留两者
 ```
+
+### 7.3 备份冲突处理
+
+| 冲突类型 | 处理策略 |
+|----------|----------|
+| 同一文件两端同时修改 | 保留两者，以时间戳区分 |
+| 本地删除，云端修改 | 保留云端版本 |
+| 云端删除，本地修改 | 保留本地版本至回收站 |
+| 批量冲突 | 批量提示用户选择 |
 
 ## 8. 定时任务设计
 
