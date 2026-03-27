@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: xiaocheng-netdisk
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/xiaocheng_netdisk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123456
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+  servlet:
+    multipart:
+      max-file-size: 10GB
+      max-request-size: 10GB
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.xiaocheng.netdisk.dal.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: xiaocheng-netdisk-secret-key-2024
+  expiration: 7200000
+  refresh-expiration: 604800000
+
+minio:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: xiaocheng-netdisk
+
+file:
+  upload-path: /data/upload
+  temp-path: /data/temp
+  chunk-path: /data/chunk
+  thumbnail-path: /data/thumbnail
+  chunk-size: 5242880
+  default-capacity: 5368709120
+
+recycle:
+  retain-days: 30

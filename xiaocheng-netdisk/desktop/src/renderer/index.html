@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8080">
+  <title>小程网盘</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/file-list.css">
+  <link rel="stylesheet" href="css/header.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">☁️</span>
+          <span class="logo-text">小程网盘</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul class="nav-list">
+          <li class="nav-item active" data-page="files">
+            <span class="nav-icon">📁</span>
+            <span class="nav-text">文件列表</span>
+          </li>
+          <li class="nav-item" data-page="favorite">
+            <span class="nav-icon">⭐</span>
+            <span class="nav-text">收藏</span>
+          </li>
+          <li class="nav-item" data-page="recycle">
+            <span class="nav-icon">🗑️</span>
+            <span class="nav-text">回收站</span>
+          </li>
+          <li class="nav-item" data-page="backup">
+            <span class="nav-icon">🔄</span>
+            <span class="nav-text">备份</span>
+          </li>
+          <li class="nav-item" data-page="share">
+            <span class="nav-icon">🔗</span>
+            <span class="nav-text">分享记录</span>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="storage-info">
+          <div class="storage-label">存储空间</div>
+          <div class="storage-bar">
+            <div class="storage-bar-fill" id="storageBarFill"></div>
+          </div>
+          <div class="storage-text" id="storageText">0 GB / 5 GB</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="btn-back" id="btnBack" title="返回">←</button>
+          <div class="breadcrumb" id="breadcrumb">
+            <span class="breadcrumb-item">全部文件</span>
+          </div>
+        </div>
+        <div class="header-center">
+          <div class="search-box">
+            <input type="text" class="search-input" placeholder="搜索文件..." id="searchInput">
+            <button class="search-btn" id="searchBtn">🔍</button>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="btn-icon" id="btnUpload" title="上传文件">⬆️</button>
+          <button class="btn-icon" id="btnNewFolder" title="新建文件夹">📁+</button>
+          <div class="user-menu" id="userMenu">
+            <span class="user-avatar">👤</span>
+            <div class="user-dropdown" id="userDropdown">
+              <div class="dropdown-item" id="btnProfile">个人设置</div>
+              <div class="dropdown-item" id="btnLogout">退出登录</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="toolbar" id="toolbar">
+        <div class="toolbar-left">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="selectAll">
+            <span class="checkbox-label">全选</span>
+          </label>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn-toolbar" id="btnDownload" disabled>下载</button>
+          <button class="btn-toolbar" id="btnShare" disabled>分享</button>
+          <button class="btn-toolbar" id="btnDelete" disabled>删除</button>
+          <button class="btn-toolbar" id="btnMove" disabled>移动</button>
+        </div>
+      </div>
+
+      <div class="content-area" id="contentArea">
+        <div class="file-list" id="fileList">
+          <div class="file-list-header">
+            <div class="col-name">文件名</div>
+            <div class="col-size">大小</div>
+            <div class="col-time">修改时间</div>
+          </div>
+          <div class="file-list-body" id="fileListBody">
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-panel" id="uploadPanel">
+        <div class="upload-header">
+          <span>上传列表</span>
+          <button class="btn-close" id="closeUploadPanel">×</button>
+        </div>
+        <div class="upload-list" id="uploadList">
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="login-modal" id="loginModal">
+    <div class="login-box">
+      <div class="login-header">
+        <span class="logo-icon">☁️</span>
+        <h2>小程网盘</h2>
+      </div>
+      <form class="login-form" id="loginForm">
+        <input type="text" class="input-field" placeholder="用户名" id="username" required>
+        <input type="password" class="input-field" placeholder="密码" id="password" required>
+        <button type="submit" class="btn-login" id="btnLogin">登录</button>
+        <div class="login-switch">
+          <a href="#" id="btnSwitchToRegister">还没有账号？立即注册</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
